@@ -55,18 +55,22 @@ function _fits --description "fzf-powered inline tab completion for fish"
         $fits_fzf_opts
 
     # Source completions and pipe through fzf
-    set -l result
+    # Run fzf as a direct foreground process (not in a command substitution)
+    # so it properly receives SIGWINCH for terminal resize handling
+    set -l fits_result_file (mktemp)
     switch "$fits_group"
         case directories
-            set result (_fits_source_paths d | fzf $fzf_opts)
+            _fits_source_paths d | fzf $fzf_opts >"$fits_result_file"
         case files
-            set result (_fits_source_paths | fzf $fzf_opts)
+            _fits_source_paths | fzf $fzf_opts >"$fits_result_file"
         case processes
-            set result (ps -ax -o pid=,command= 2>/dev/null | fzf $fzf_opts)
+            ps -ax -o pid=,command= 2>/dev/null | fzf $fzf_opts >"$fits_result_file"
         case '*'
-            set result (fzf $fzf_opts <"$fits_complist")
+            fzf $fzf_opts <"$fits_complist" >"$fits_result_file"
     end
     set -l fzf_status $status
+    set -l result (cat "$fits_result_file")
+    rm -f "$fits_result_file" 2>/dev/null
 
     # Clean up temp file
     rm -f "$fits_complist" 2>/dev/null
