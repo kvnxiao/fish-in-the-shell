@@ -36,8 +36,12 @@ function _fits --description "fzf-powered inline tab completion for fish"
     end
 
     # fzf options
+    set -l height_opts
+    if test "$fits_height" != full
+        set height_opts --height "$fits_height"
+    end
     set -l fzf_opts \
-        --height "$fits_height" \
+        $height_opts \
         --border rounded \
         --layout=reverse \
         --scrollbar '█' \
@@ -55,22 +59,18 @@ function _fits --description "fzf-powered inline tab completion for fish"
         $fits_fzf_opts
 
     # Source completions and pipe through fzf
-    # Run fzf as a direct foreground process (not in a command substitution)
-    # so it properly receives SIGWINCH for terminal resize handling
-    set -l fits_result_file (mktemp)
+    set -l result
     switch "$fits_group"
         case directories
-            _fits_source_paths d | fzf $fzf_opts >"$fits_result_file"
+            set result (_fits_source_paths d | fzf $fzf_opts)
         case files
-            _fits_source_paths | fzf $fzf_opts >"$fits_result_file"
+            set result (_fits_source_paths | fzf $fzf_opts)
         case processes
-            ps -ax -o pid=,command= 2>/dev/null | fzf $fzf_opts >"$fits_result_file"
+            set result (ps -ax -o pid=,command= 2>/dev/null | fzf $fzf_opts)
         case '*'
-            fzf $fzf_opts <"$fits_complist" >"$fits_result_file"
+            set result (fzf $fzf_opts <"$fits_complist")
     end
     set -l fzf_status $status
-    set -l result (cat "$fits_result_file")
-    rm -f "$fits_result_file" 2>/dev/null
 
     # Clean up temp file
     rm -f "$fits_complist" 2>/dev/null
