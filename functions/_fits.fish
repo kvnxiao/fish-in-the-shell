@@ -40,6 +40,7 @@ function _fits --description "fzf-powered inline tab completion for fish"
         --height "$fits_height" \
         --border rounded \
         --layout=reverse \
+        --scrollbar '█' \
         --exact \
         --tiebreak=length \
         --ansi \
