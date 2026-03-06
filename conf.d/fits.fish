@@ -12,6 +12,7 @@ end
 # Set defaults for universal variables (only if not already set)
 set -qU fits_keybinding; or set -U fits_keybinding \t
 set -qU fits_height; or set -U fits_height '40%'
+set -qU fits_preview_window; or set -U fits_preview_window 'right,50%,border-left,<80(up,40%,border-bottom)'
 set -qU fits_fzf_opts; or set -U fits_fzf_opts
 set -qU fits_fzf_binds; or set -U fits_fzf_binds 'tab:down' 'shift-tab:up' 'shift-down:select+down' 'shift-up:select+up' 'ctrl-space:toggle' 'ctrl-d:deselect-all'
 set -qU fits_bat_opts; or set -U fits_bat_opts
@@ -29,6 +30,7 @@ function _fits_uninstall --on-event fits_uninstall
     bind --erase --mode insert $fits_keybinding 2>/dev/null
     set -e fits_keybinding
     set -e fits_height
+    set -e fits_preview_window
     set -e fits_fzf_opts
     set -e fits_fzf_binds
     set -e fits_bat_opts

@@ -49,6 +49,7 @@ function _fits --description "fzf-powered inline tab completion for fish"
         --exit-0 \
         --delimiter='\t' \
         --with-nth=1..2 \
+        --preview-window "$fits_preview_window" \
         --preview "fish -c '_fits_preview {1}'" \
         $fzf_bind_opts \
         $fits_fzf_opts
