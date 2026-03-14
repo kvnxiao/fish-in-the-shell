@@ -58,41 +58,74 @@ function _fits --description "fzf-powered inline tab completion for fish"
         $fzf_bind_opts \
         $fits_fzf_opts
 
-    # Compute fzf query for prefix matching when a partial token exists
+    # Compute prefix for matching and fzf query
     set -l query_opts
+    set -l match_prefix
     if test -n "$fits_token"
         set -l expanded (_fits_expand_tilde "$fits_token")
         switch "$fits_group"
             case directories files
                 set -l dir (_fits_path_to_complete)
                 if test -z "$dir"
-                    set query_opts --query "^./$expanded"
+                    set match_prefix "./$expanded"
                 else
-                    set query_opts --query "^$expanded"
+                    set match_prefix "$expanded"
                 end
             case '*'
-                set query_opts --query "^$fits_token"
+                set match_prefix "$fits_token"
+        end
+        if test -n "$match_prefix"
+            set query_opts --query "^$match_prefix"
         end
     end
 
-    # Source completions and pipe through fzf
-    set -l result
+    # Collect candidates
+    set -l candidates
     switch "$fits_group"
         case directories
-            set result (_fits_source_paths d | fzf $fzf_opts $query_opts)
+            set candidates (_fits_source_paths d)
         case files
-            set result (_fits_source_paths | fzf $fzf_opts $query_opts)
+            set candidates (_fits_source_paths)
         case processes
-            set result (ps -ax -o pid=,command= 2>/dev/null | fzf $fzf_opts $query_opts)
+            set candidates (ps -ax -o pid=,command= 2>/dev/null)
         case '*'
-            set result (fzf $fzf_opts $query_opts <"$fits_complist")
+            set candidates (cat "$fits_complist")
     end
-    set -l fzf_status $status
+
+    # Short-circuit: skip fzf when exactly one candidate matches
+    set -l result
+    if test (count $candidates) -eq 1
+        set result $candidates[1]
+    else if test -n "$match_prefix" -a (count $candidates) -gt 1
+        set -l filtered
+        for c in $candidates
+            set -l plain (string replace -ra '\e\[[0-9;]*m' '' -- "$c")
+            set plain (string replace -r '\t.*' '' -- "$plain")
+            if string match -q "$match_prefix*" -- "$plain"
+                set -a filtered "$c"
+            end
+        end
+        if test (count $filtered) -eq 1
+            set result $filtered[1]
+        else if test (count $filtered) -eq 0
+            rm -f "$fits_complist" 2>/dev/null
+            commandline --function repaint
+            _fits_cleanup
+            return
+        end
+    end
+
+    # Fall back to fzf for interactive selection
+    set -l fzf_status 0
+    if not set -q result[1]
+        set result (printf '%s\n' $candidates | fzf $fzf_opts $query_opts)
+        set fzf_status $status
+    end
 
     # Clean up temp file
     rm -f "$fits_complist" 2>/dev/null
 
-    # If fzf was cancelled, repaint and bail
+    # If fzf was cancelled or no result, repaint and bail
     if test $fzf_status -ne 0 -o -z "$result"
         commandline --function repaint
         _fits_cleanup
