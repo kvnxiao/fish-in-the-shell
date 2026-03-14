@@ -109,7 +109,7 @@ function _fits --description "fzf-powered inline tab completion for fish"
         if string match -qr '^~' -- "$item"
             set -a escaped (string sub -s 2 -- "$item" | string escape --no-quoted | string replace -r '^' '~')
         else if string match -qr '^\$' -- "$item"
-            set -a escaped (string sub -s 2 -- "$item" | string escape --no-quoted | string replace -r '^' '$')
+            set -a escaped '$'(string sub -s 2 -- "$item" | string escape --no-quoted)
         else
             set -a escaped (string escape --no-quoted -- "$item")
         end
