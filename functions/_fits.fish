@@ -58,17 +58,34 @@ function _fits --description "fzf-powered inline tab completion for fish"
         $fzf_bind_opts \
         $fits_fzf_opts
 
+    # Compute fzf query for prefix matching when a partial token exists
+    set -l query_opts
+    if test -n "$fits_token"
+        set -l expanded (_fits_expand_tilde "$fits_token")
+        switch "$fits_group"
+            case directories files
+                set -l dir (_fits_path_to_complete)
+                if test -z "$dir"
+                    set query_opts --query "^./$expanded"
+                else
+                    set query_opts --query "^$expanded"
+                end
+            case '*'
+                set query_opts --query "^$fits_token"
+        end
+    end
+
     # Source completions and pipe through fzf
     set -l result
     switch "$fits_group"
         case directories
-            set result (_fits_source_paths d | fzf $fzf_opts)
+            set result (_fits_source_paths d | fzf $fzf_opts $query_opts)
         case files
-            set result (_fits_source_paths | fzf $fzf_opts)
+            set result (_fits_source_paths | fzf $fzf_opts $query_opts)
         case processes
-            set result (ps -ax -o pid=,command= 2>/dev/null | fzf $fzf_opts)
+            set result (ps -ax -o pid=,command= 2>/dev/null | fzf $fzf_opts $query_opts)
         case '*'
-            set result (fzf $fzf_opts <"$fits_complist")
+            set result (fzf $fzf_opts $query_opts <"$fits_complist")
     end
     set -l fzf_status $status
 
