@@ -16,8 +16,7 @@ function _fits_preview_opt --description "Preview an option by extracting its ma
         man "$cmd" 2>/dev/null | col -bx 2>/dev/null >"$cache_file"
     end
 
-    set -l mantext (cat "$cache_file" 2>/dev/null)
-    if test -z "$mantext"
+    if not test -s "$cache_file"
         rm -f "$cache_file" 2>/dev/null
         echo "$desc"
         return
@@ -47,10 +46,11 @@ function _fits_preview_opt --description "Preview an option by extracting its ma
 
     # Extract lines around the option match
     if test -n "$grep_cmd"
-        set -l match_output (echo "$mantext" | $grep_cmd -n "$pattern" 2>/dev/null | head -1)
+        set -l match_output ($grep_cmd -n "$pattern" "$cache_file" 2>/dev/null | head -1)
         if test -n "$match_output"
             set -l line_num (string split -m 1 ':' -- "$match_output")[1]
-            echo "$mantext" | sed -n "$line_num,+20p" 2>/dev/null
+            set -l end_line (math "$line_num" + 20)
+            sed -n "$line_num,$end_line"p "$cache_file" 2>/dev/null
             return
         end
     end

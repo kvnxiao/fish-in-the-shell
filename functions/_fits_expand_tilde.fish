@@ -8,5 +8,5 @@ function _fits_expand_tilde --description "Expand ~ and \$VAR in a token"
             break
         end
     end
-    echo $s
+    printf '%s\n' "$s"
 end

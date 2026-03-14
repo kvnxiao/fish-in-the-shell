@@ -94,7 +94,12 @@ function _fits --description "fzf-powered inline tab completion for fish"
 
     # Short-circuit: skip fzf when exactly one candidate matches
     set -l result
-    if test (count $candidates) -eq 1
+    if test (count $candidates) -eq 0
+        rm -f "$fits_complist" 2>/dev/null
+        commandline --function repaint
+        _fits_cleanup
+        return
+    else if test (count $candidates) -eq 1
         set result $candidates[1]
     else if test -n "$match_prefix" -a (count $candidates) -gt 1
         set -l filtered
