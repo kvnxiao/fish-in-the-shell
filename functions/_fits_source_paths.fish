@@ -4,7 +4,7 @@ function _fits_source_paths --description "List paths for completion using fd or
     test -z "$dir"; and set dir .
 
     if type -q fd
-        set -l fd_args --color=always --hidden --follow --exclude=.git
+        set -l fd_args --color=always --hidden --follow --exclude '.git/**'
         test -n "$type_flag"; and set -a fd_args --type $type_flag
         fd $fd_args $fits_fd_opts -- . "$dir" 2>/dev/null
     else
