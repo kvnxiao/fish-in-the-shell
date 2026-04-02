@@ -62,6 +62,7 @@ function _fits --description "fzf-powered inline tab completion for fish"
         --border rounded \
         --layout=reverse \
         $scrollbar_opts \
+        --prompt "$fits_commandline> " \
         --exact \
         --tiebreak=length \
         --ansi \
