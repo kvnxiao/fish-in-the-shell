@@ -35,16 +35,30 @@ function _fits --description "fzf-powered inline tab completion for fish"
         set fzf_bind_opts --bind (string join ',' -- $fits_fzf_binds)
     end
 
-    # fzf options
+    # Fuzzy finder options (sk vs fzf)
     set -l height_opts
     if test "$fits_height" != full
         set height_opts --height "$fits_height"
     end
+
+    set -l is_sk (string match -q 'sk' -- $fits_fuzzy_cmd; and echo 1; or echo 0)
+    set -l preview_window_val
+    set -l extra_opts
+    set -l scrollbar_opts
+    if test "$is_sk" = 1
+        set preview_window_val "$fits_sk_preview_window"
+        set extra_opts $fits_sk_opts
+    else
+        set preview_window_val "$fits_preview_window"
+        set extra_opts $fits_fzf_opts
+        set scrollbar_opts --scrollbar '█'
+    end
+
     set -l fzf_opts \
         $height_opts \
         --border rounded \
         --layout=reverse \
-        --scrollbar '█' \
+        $scrollbar_opts \
         --exact \
         --tiebreak=length \
         --ansi \
@@ -53,10 +67,10 @@ function _fits --description "fzf-powered inline tab completion for fish"
         --exit-0 \
         --delimiter='\t' \
         --with-nth=1..2 \
-        --preview-window "$fits_preview_window" \
+        --preview-window "$preview_window_val" \
         --preview "fish -c '_fits_preview {1}'" \
         $fzf_bind_opts \
-        $fits_fzf_opts
+        $extra_opts
 
     # Compute prefix for matching and fzf query
     set -l query_opts
