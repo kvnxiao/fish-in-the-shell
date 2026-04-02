@@ -137,8 +137,11 @@ function _fits --description "fzf-powered inline tab completion for fish"
     # Fall back to fuzzy finder for interactive selection
     set -l fzf_status 0
     if not set -q result[1]
-        set result (printf '%s\n' $candidates | $fits_fuzzy_cmd $fzf_opts $query_opts)
+        set -l tmpinput (mktemp)
+        printf '%s\n' $candidates >"$tmpinput"
+        set result ($fits_fuzzy_cmd $fzf_opts $query_opts <"$tmpinput")
         set fzf_status $status
+        rm -f "$tmpinput" 2>/dev/null
     end
 
     # Clean up temp file
@@ -159,9 +162,9 @@ function _fits --description "fzf-powered inline tab completion for fish"
     set -l escaped
     for item in $result
         if string match -qr '^~' -- "$item"
-            set -a escaped (string sub -s 2 -- "$item" | string escape --no-quoted | string replace -r '^' '~')
+            set -a escaped '~'(string escape --no-quoted -- (string sub -s 2 -- "$item"))
         else if string match -qr '^\$' -- "$item"
-            set -a escaped '$'(string sub -s 2 -- "$item" | string escape --no-quoted)
+            set -a escaped '$'(string escape --no-quoted -- (string sub -s 2 -- "$item"))
         else
             set -a escaped (string escape --no-quoted -- "$item")
         end
