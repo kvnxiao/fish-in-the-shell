@@ -22,8 +22,11 @@ function _fits --description "fzf-powered inline tab completion for fish"
         end
     end
 
-    # Generate completions to a temp file
-    set -gx fits_complist (mktemp)
+    # Generate completions to a temp file (stable path, no rm needed)
+    set -l _fits_tmpdir "$TMPDIR"
+    test -z "$_fits_tmpdir"; and set _fits_tmpdir "$TEMP"
+    test -z "$_fits_tmpdir"; and set _fits_tmpdir /tmp
+    set -gx fits_complist "$_fits_tmpdir/fits_complist_$fish_pid"
     complete -C "$fits_commandline" >"$fits_complist" 2>/dev/null
 
     # Determine completion group (pass token explicitly)
@@ -109,7 +112,7 @@ function _fits --description "fzf-powered inline tab completion for fish"
     # Short-circuit: skip fzf when exactly one candidate matches
     set -l result
     if test (count $candidates) -eq 0
-        rm -f "$fits_complist" 2>/dev/null
+
         commandline --function repaint
         _fits_cleanup
         return
@@ -127,7 +130,7 @@ function _fits --description "fzf-powered inline tab completion for fish"
         if test (count $filtered) -eq 1
             set result $filtered[1]
         else if test (count $filtered) -eq 0
-            rm -f "$fits_complist" 2>/dev/null
+    
             commandline --function repaint
             _fits_cleanup
             return
@@ -136,27 +139,33 @@ function _fits --description "fzf-powered inline tab completion for fish"
 
     # Fall back to fuzzy finder for interactive selection
     set -l fzf_status 0
+    set -l _fits_debug 0
     if not set -q result[1]
-        set -l tmpinput (mktemp)
+        set _fits_debug 1
+        set -l tmpinput "$_fits_tmpdir/fits_input_$fish_pid"
         printf '%s\n' $candidates >"$tmpinput"
+        printf '\n' >/dev/tty
+        set -g _fits_t0 (command date +%s%3N)
         set result ($fits_fuzzy_cmd $fzf_opts $query_opts <"$tmpinput")
         set fzf_status $status
-        rm -f "$tmpinput" 2>/dev/null
+        set -g _fits_t1 (command date +%s%3N)
     end
-
-    # Clean up temp file
-    rm -f "$fits_complist" 2>/dev/null
 
     # If fzf was cancelled or no result, repaint and bail
     if test $fzf_status -ne 0 -o -z "$result"
         commandline --function repaint
         _fits_cleanup
+        set -e _fits_t0; set -e _fits_t1; set -e _fits_t1b; set -e _fits_t1c
         return
     end
+
+    set -g _fits_t2 (command date +%s%3N)
 
     # Strip ANSI codes and tab-separated descriptions from results
     set result (string replace -ra '\e\[[0-9;]*m' '' -- $result)
     set result (string replace -r '\t.*' '' -- $result)
+
+    set -g _fits_t3 (command date +%s%3N)
 
     # Process the selected results
     set -l escaped
@@ -170,6 +179,8 @@ function _fits --description "fzf-powered inline tab completion for fish"
         end
     end
 
+    set -g _fits_t4 (command date +%s%3N)
+
     # Replace the current token
     commandline --replace --current-token -- (string join ' ' -- $escaped)
 
@@ -181,8 +192,16 @@ function _fits --description "fzf-powered inline tab completion for fish"
         end
     end
 
+    set -g _fits_t5 (command date +%s%3N)
+
     commandline --function repaint
     _fits_cleanup
+
+    if test "$_fits_debug" = 1
+        set -g _fits_t6 (command date +%s%3N)
+        echo "sk_exit:$(math $_fits_t1 - $_fits_t0)ms test:$(math $_fits_t2 - $_fits_t1)ms strip:$(math $_fits_t3 - $_fits_t2)ms escape:$(math $_fits_t4 - $_fits_t3)ms cmdline:$(math $_fits_t5 - $_fits_t4)ms repaint:$(math $_fits_t6 - $_fits_t5)ms" >"$_fits_tmpdir/fits_timing.log"
+    end
+    set -e _fits_t0; set -e _fits_t1; set -e _fits_t2; set -e _fits_t3; set -e _fits_t4; set -e _fits_t5; set -e _fits_t6
 end
 
 function _fits_cleanup --description "Clean up exported fits variables"
