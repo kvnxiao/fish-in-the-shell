@@ -11,7 +11,10 @@ function _fits_preview_opt --description "Preview an option by extracting its ma
     end
 
     # Cache man page output to avoid re-fetching on every fzf cursor move
-    set -l cache_file "/tmp/fits_man_$cmd"
+    set -l _tmpdir "$TMPDIR"
+    test -z "$_tmpdir"; and set _tmpdir "$TEMP"
+    test -z "$_tmpdir"; and set _tmpdir /tmp
+    set -l cache_file "$_tmpdir/fits_man_$cmd"
     if not test -f "$cache_file"
         man "$cmd" 2>/dev/null | col -bx 2>/dev/null >"$cache_file"
     end

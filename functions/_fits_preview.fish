@@ -4,11 +4,13 @@ function _fits_preview --description "Preview dispatcher for fzf"
 
     # Look up the description for this candidate from the complist
     if test -n "$fits_complist" -a -f "$fits_complist"
-        set -l escaped_name (string escape --style=regex -- "$argv[1]")
-        set -l match_line (grep -m 1 "^$escaped_name\t" "$fits_complist" 2>/dev/null)
-        if test -n "$match_line"
-            set fits_desc (string split -m 1 \t -- "$match_line")[2]
-        end
+        set -l target "$argv[1]"\t
+        while read -l line
+            if string match -q "$target*" -- "$line"
+                set fits_desc (string split -m 1 \t -- "$line")[2]
+                break
+            end
+        end <"$fits_complist"
     end
 
     # Determine if we're in command position (first token, or second token
