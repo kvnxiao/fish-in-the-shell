@@ -125,7 +125,7 @@ function _fits --description "fzf-powered inline tab completion for fish"
         for c in $candidates
             set -l plain (string replace -ra '\e\[[0-9;]*m' '' -- "$c")
             set plain (string replace -r '\t.*' '' -- "$plain")
-            if string match -q "$match_prefix*" -- "$plain"
+            if string match -q -- "$match_prefix*" "$plain"
                 set -a filtered "$c"
             end
         end
