@@ -25,6 +25,7 @@ set -qU fits_sk_preview_window; or set -U fits_sk_preview_window 'right:50%'
 set -qU fits_fzf_opts; or set -U fits_fzf_opts
 set -qU fits_sk_opts; or set -U fits_sk_opts
 set -qU fits_fzf_binds; or set -U fits_fzf_binds 'tab:down' 'shift-tab:up' 'shift-down:select+down' 'shift-up:select+up' 'ctrl-space:toggle' 'ctrl-d:deselect-all'
+set -qU fits_builtin_search; or set -U fits_builtin_search false
 set -qU fits_bat_opts; or set -U fits_bat_opts
 set -qU fits_eza_opts; or set -U fits_eza_opts
 set -qU fits_lsd_opts; or set -U fits_lsd_opts
@@ -46,6 +47,7 @@ function _fits_uninstall --on-event fits_uninstall
     set -e fits_fzf_opts
     set -e fits_sk_opts
     set -e fits_fzf_binds
+    set -e fits_builtin_search
     set -e fits_bat_opts
     set -e fits_eza_opts
     set -e fits_lsd_opts

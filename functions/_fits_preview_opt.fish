@@ -20,7 +20,7 @@ function _fits_preview_opt --description "Preview an option by extracting its ma
     end
 
     if not test -s "$cache_file"
-        rm -f "$cache_file" 2>/dev/null
+        # Empty file acts as negative cache (no man page for this command)
         echo "$desc"
         return
     end
@@ -39,22 +39,36 @@ function _fits_preview_opt --description "Preview an option by extracting its ma
         return
     end
 
-    # Pick whichever grep variant is available
-    set -l grep_cmd
-    if type -q rg
-        set grep_cmd rg
-    else if type -q grep
-        set grep_cmd grep
-    end
+    if test "$fits_builtin_search" = true
+        # Builtin path: no external process spawns (faster on Cygwin/MSYS2)
+        while read -l line
+            if string match -qr -- "$pattern" "$line"
+                echo "$line"
+                set -l remaining 20
+                while test $remaining -gt 0; and read -l nextline
+                    echo "$nextline"
+                    set remaining (math $remaining - 1)
+                end
+                return
+            end
+        end <"$cache_file"
+    else
+        # External path: rg/grep + sed (faster search on Linux/macOS)
+        set -l grep_cmd
+        if type -q rg
+            set grep_cmd rg
+        else if type -q grep
+            set grep_cmd grep
+        end
 
-    # Extract lines around the option match
-    if test -n "$grep_cmd"
-        set -l match_output ($grep_cmd -n "$pattern" "$cache_file" 2>/dev/null | head -1)
-        if test -n "$match_output"
-            set -l line_num (string split -m 1 ':' -- "$match_output")[1]
-            set -l end_line (math "$line_num" + 20)
-            sed -n "$line_num,$end_line"p "$cache_file" 2>/dev/null
-            return
+        if test -n "$grep_cmd"
+            set -l match_output ($grep_cmd -n "$pattern" "$cache_file" 2>/dev/null | head -1)
+            if test -n "$match_output"
+                set -l line_num (string split -m 1 ':' -- "$match_output")[1]
+                set -l end_line (math "$line_num" + 20)
+                sed -n "$line_num,$end_line"p "$cache_file" 2>/dev/null
+                return
+            end
         end
     end
 

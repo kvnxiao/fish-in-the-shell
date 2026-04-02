@@ -6,6 +6,12 @@ function _fits_preview_file --description "Preview a file using bat or cat"
         case text
             if type -q bat
                 bat --color=always --style=numbers --line-range=:500 $fits_bat_opts -- "$filepath" 2>/dev/null
+            else if test "$fits_builtin_search" = true
+                set -l n 500
+                while test $n -gt 0; and read -l line
+                    echo "$line"
+                    set n (math $n - 1)
+                end <"$filepath"
             else
                 cat -- "$filepath" 2>/dev/null | head -500
             end
