@@ -47,21 +47,19 @@ function _fits --description "fzf-powered inline tab completion for fish"
     set -l is_sk (string match -q 'sk' -- $fits_fuzzy_cmd; and echo 1; or echo 0)
     set -l preview_window_val
     set -l extra_opts
-    set -l scrollbar_opts
     if test "$is_sk" = 1
         set preview_window_val "$fits_sk_preview_window"
         set extra_opts $fits_sk_opts
     else
         set preview_window_val "$fits_preview_window"
         set extra_opts $fits_fzf_opts
-        set scrollbar_opts --scrollbar '█'
     end
 
     set -l fzf_opts \
         $height_opts \
         --border rounded \
         --layout=reverse \
-        $scrollbar_opts \
+        --scrollbar '█' \
         --prompt "$fits_commandline> " \
         --exact \
         --tiebreak=length \
