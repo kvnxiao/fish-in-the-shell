@@ -4,8 +4,16 @@
 # Only load in interactive sessions
 status is-interactive; or return
 
-# Guard: fzf is required
-if not type -q fzf
+# Resolve fuzzy finder: user override > sk > fzf
+if set -qU fits_fuzzy_cmd
+    if not type -q $fits_fuzzy_cmd
+        return
+    end
+else if type -q sk
+    set -U fits_fuzzy_cmd sk
+else if type -q fzf
+    set -U fits_fuzzy_cmd fzf
+else
     return
 end
 
@@ -28,6 +36,7 @@ bind --mode insert $fits_keybinding _fits 2>/dev/null
 function _fits_uninstall --on-event fits_uninstall
     bind --erase $fits_keybinding
     bind --erase --mode insert $fits_keybinding 2>/dev/null
+    set -e fits_fuzzy_cmd
     set -e fits_keybinding
     set -e fits_height
     set -e fits_preview_window

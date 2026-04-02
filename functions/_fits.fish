@@ -120,10 +120,10 @@ function _fits --description "fzf-powered inline tab completion for fish"
         end
     end
 
-    # Fall back to fzf for interactive selection
+    # Fall back to fuzzy finder for interactive selection
     set -l fzf_status 0
     if not set -q result[1]
-        set result (printf '%s\n' $candidates | fzf $fzf_opts $query_opts)
+        set result (printf '%s\n' $candidates | $fits_fuzzy_cmd $fzf_opts $query_opts)
         set fzf_status $status
     end
 
