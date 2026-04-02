@@ -72,7 +72,7 @@ function _fits --description "fzf-powered inline tab completion for fish"
         --delimiter='\t' \
         --with-nth=1..2 \
         --preview-window "$preview_window_val" \
-        --preview "fish -c '_fits_preview_debounce {1}'" \
+        --preview "fish -c '_fits_preview_debounce \$argv[1]' -- {1}" \
         $fzf_bind_opts \
         $extra_opts
 

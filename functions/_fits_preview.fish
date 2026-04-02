@@ -6,7 +6,7 @@ function _fits_preview --description "Preview dispatcher for fzf"
     if test -n "$fits_complist" -a -f "$fits_complist"
         set -l target "$argv[1]"\t
         while read -l line
-            if string match -q "$target*" -- "$line"
+            if string match -q -- "$target*" "$line"
                 set fits_desc (string split -m 1 \t -- "$line")[2]
                 break
             end
