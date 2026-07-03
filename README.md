@@ -1,6 +1,6 @@
 # fish-in-the-shell (fits)
 
-A [fish shell](https://fishshell.com/) plugin that replaces the built-in tab completion with an interactive fuzzy completion menu powered by [skim](https://github.com/lotabout/skim) or [fzf](https://github.com/junegunn/fzf). Type a command, press Tab, and get a searchable, previewable list of completions — files, directories, commands, options, processes, and more.
+A [fish shell](https://fishshell.com/) plugin that replaces the built-in tab completion with an interactive fuzzy completion menu powered by [skim](https://github.com/skim-rs/skim) or [fzf](https://github.com/junegunn/fzf). Type a command, press Tab, and get a searchable, previewable list of completions — files, directories, commands, options, processes, and more.
 
 ## Features
 
@@ -8,14 +8,14 @@ A [fish shell](https://fishshell.com/) plugin that replaces the built-in tab com
 - **Smart previews** — contextual previews for files (`bat`), directories (`eza`/`lsd`/`ls`), man pages, fish functions, command options, and processes
 - **Completion grouping** — automatically detects whether you're completing files, directories, options, or processes and adjusts behavior accordingly
 - **Multi-select** — select multiple items with configurable keybindings
-- **Debounced previews** — avoids spawning heavy preview commands while scrolling quickly
 - **Works with skim and fzf** — auto-detects whichever is installed (prefers `sk`)
+- **Cross-platform** — Linux, macOS, and Windows (fish under MSYS2/Cygwin)
 - **Enhanced tools integration** — uses `bat`, `eza`/`lsd`, `fd`, and `procs` when available, falls back to standard tools
 
 ## Requirements
 
-- [fish](https://fishshell.com/) 3.0+
-- [skim](https://github.com/lotabout/skim) **or** [fzf](https://github.com/junegunn/fzf)
+- [fish](https://fishshell.com/) 3.2+
+- [skim](https://github.com/skim-rs/skim) 4.4+ **or** [fzf](https://github.com/junegunn/fzf) 0.36+
 
 ### Optional (recommended)
 

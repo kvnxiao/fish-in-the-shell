@@ -44,7 +44,7 @@ function _fits --description "fzf-powered inline tab completion for fish"
         set height_opts --height "$fits_height"
     end
 
-    set -l is_sk (string match -q 'sk' -- $fits_fuzzy_cmd; and echo 1; or echo 0)
+    set -l is_sk (string match -qr '(^|/)sk(\.exe)?$' -- $fits_fuzzy_cmd; and echo 1; or echo 0)
     set -l preview_window_val
     set -l extra_opts
     if test "$is_sk" = 1
@@ -53,6 +53,34 @@ function _fits --description "fzf-powered inline tab completion for fish"
     else
         set preview_window_val "$fits_preview_window"
         set extra_opts $fits_fzf_opts
+    end
+
+    # Path-aware ranking for path completions (skim 4.4+ / fzf 0.36+)
+    set -l scheme_opts
+    switch "$fits_group"
+        case directories files
+            set scheme_opts --scheme path
+    end
+
+    # skim on Windows substitutes {} raw (no quoting since skim 4.6.1);
+    # wrap it in double quotes — the only quoting cmd.exe respects — so
+    # names with spaces, &, ^, or apostrophes reach fish as one argument
+    set -l preview_item '{1}'
+    if test "$is_sk" = 1; and set -q MSYSTEM
+        set preview_item '"{1}"'
+    end
+
+    # Directories group: every candidate is a directory, so preview with the
+    # lister directly and skip the fish shim (one fish startup per preview)
+    set -l preview_cmd "fish --no-config -c 'set fish_function_path (string split \n -- \$fits_fn_path); _fits_preview \$argv[1]' -- $preview_item"
+    if test "$fits_group" = directories
+        if type -q lsd
+            set preview_cmd "lsd --color=always --icon=always -la $fits_lsd_opts -- $preview_item"
+        else if type -q eza
+            set preview_cmd "eza --color=always --icons --long --all $fits_eza_opts -- $preview_item"
+        else
+            set preview_cmd "ls -la -- $preview_item"
+        end
     end
 
     set -l fzf_opts \
@@ -70,7 +98,8 @@ function _fits --description "fzf-powered inline tab completion for fish"
         --delimiter='\t' \
         --with-nth=1..2 \
         --preview-window "$preview_window_val" \
-        --preview "fish -c '_fits_preview_debounce \$argv[1]' -- {1}" \
+        --preview "$preview_cmd" \
+        $scheme_opts \
         $fzf_bind_opts \
         $extra_opts
 
@@ -103,7 +132,16 @@ function _fits --description "fzf-powered inline tab completion for fish"
         case files
             set candidates (_fits_source_paths)
         case processes
-            set candidates (ps -ax -o pid=,command= 2>/dev/null)
+            if not set -q MSYSTEM
+                # "PID\tCOMMAND" so both columns show but only the PID is inserted
+                set candidates (ps -ax -o pid=,command= 2>/dev/null | string trim -l | string replace -r '\s+' '\t')
+            end
+            if test (count $candidates) -eq 0
+                # No ps -o support (MSYS2/Cygwin): use fish's own completions
+                while read -l line
+                    set -a candidates "$line"
+                end <"$fits_complist"
+            end
         case '*'
             while read -l line
                 set -a candidates "$line"
@@ -139,6 +177,16 @@ function _fits --description "fzf-powered inline tab completion for fish"
     # Fall back to fuzzy finder for interactive selection
     set -l fzf_status 0
     if not set -q result[1]
+        # Previews run in a bare fish (--no-config, fast startup): export the
+        # function path and option lists the preview functions read.
+        # Lists are newline-joined (env export would space-join them) and
+        # rehydrated by _fits_preview in the child.
+        set -gx fits_fn_path (printf '%s\n' $fish_function_path | string collect)
+        set -gx fits_bat_opts (printf '%s\n' $fits_bat_opts | string collect)
+        set -gx fits_eza_opts (printf '%s\n' $fits_eza_opts | string collect)
+        set -gx fits_lsd_opts (printf '%s\n' $fits_lsd_opts | string collect)
+        set -gx fits_builtin_search $fits_builtin_search
+
         set -l tmpinput "$_fits_tmpdir/fits_input_$fish_pid"
         printf '%s\n' $candidates >"$tmpinput"
         # Move skim below the current input line
@@ -190,4 +238,10 @@ function _fits_cleanup --description "Clean up exported fits variables"
     set -e fits_complist
     set -e fits_group
     set -e fits_token
+    # Global-scoped erase only: these names shadow universal variables
+    set -eg fits_fn_path
+    set -eg fits_bat_opts
+    set -eg fits_eza_opts
+    set -eg fits_lsd_opts
+    set -eg fits_builtin_search
 end

@@ -18,13 +18,20 @@ function _fits_completion_group --description "Categorize completions into a gro
         return
     end
 
-    # Classify all completions in a single pass
+    # Classify completions in a single pass. Sample at most 50 names:
+    # completion lists are homogeneous in practice, and stat-ing every
+    # candidate costs ~175ms per 1000 files on MSYS2
     set -l all_dirs true
     set -l all_files true
     set -l all_numeric true
 
-    for name in $names
-        set -l resolved (_fits_expand_tilde "$name")
+    for name in $names[1..50]
+        # _fits_expand_tilde costs ~1ms per call on MSYS2 (command
+        # substitutions); skip it for the common literal-path case
+        set -l resolved $name
+        if string match -qr '^~|\$' -- "$name"
+            set resolved (_fits_expand_tilde "$name")
+        end
         test -d "$resolved"; or set all_dirs false
         test -e "$resolved"; or set all_files false
         string match -qr '^\d+$' -- "$name"; or set all_numeric false

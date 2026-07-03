@@ -1,4 +1,12 @@
 function _fits_preview --description "Preview dispatcher for fzf"
+    # Rehydrate option lists imported from the environment (newline-joined by
+    # _fits); a global scope means we're in the bare preview fish
+    for v in fits_bat_opts fits_eza_opts fits_lsd_opts
+        if set -qg $v
+            set -g $v (string split -n \n -- "$$v")
+        end
+    end
+
     set -l fits_candidate (_fits_expand_tilde "$argv[1]")
     set -l fits_desc ""
 
