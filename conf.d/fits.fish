@@ -5,16 +5,16 @@
 status is-interactive; or return
 
 # Resolve fuzzy finder: user override > sk > fzf
-if set -qU fits_fuzzy_cmd
-    if not type -q $fits_fuzzy_cmd
+# An existing value is trusted as-is to avoid a PATH scan at startup
+# (~3ms under MSYS2); _fits verifies it on first use instead.
+if not set -qU fits_fuzzy_cmd
+    if type -q sk
+        set -U fits_fuzzy_cmd sk
+    else if type -q fzf
+        set -U fits_fuzzy_cmd fzf
+    else
         return
     end
-else if type -q sk
-    set -U fits_fuzzy_cmd sk
-else if type -q fzf
-    set -U fits_fuzzy_cmd fzf
-else
-    return
 end
 
 # Set defaults for universal variables (only if not already set)

@@ -1,4 +1,17 @@
 function _fits --description "fzf-powered inline tab completion for fish"
+    # Verify the configured fuzzy finder on first use (deferred from conf.d
+    # to keep shell startup free of PATH scans)
+    if not set -q _fits_verified
+        if not type -q $fits_fuzzy_cmd
+            echo "fits: fuzzy finder '$fits_fuzzy_cmd' not found; disabling fits for this session" >&2
+            bind --erase $fits_keybinding
+            bind --erase --mode insert $fits_keybinding 2>/dev/null
+            commandline -f complete
+            return
+        end
+        set -g _fits_verified true
+    end
+
     # Capture commandline state in key-binding context (commandline builtin
     # is only reliable here, not inside command substitutions)
     set -gx fits_commandline (commandline --cut-at-cursor)
