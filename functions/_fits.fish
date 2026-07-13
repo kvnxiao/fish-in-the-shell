@@ -202,8 +202,6 @@ function _fits --description "fzf-powered inline tab completion for fish"
 
         set -l tmpinput "$_fits_tmpdir/fits_input_$fish_pid"
         printf '%s\n' $candidates >"$tmpinput"
-        # Move skim below the current input line
-        printf '\n' >/dev/tty
         set result ($fits_fuzzy_cmd $fzf_opts $query_opts <"$tmpinput")
         set fzf_status $status
     end
